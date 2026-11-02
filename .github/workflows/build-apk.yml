@@ -37,9 +37,23 @@ jobs:
           unzip -q blue-big-fish-v11-android-project.zip -d source
           test -f source/blue-big-fish-v11/settings.gradle
 
+      - name: Configure Kotlin JVM target
+        run: |
+          cat > "$RUNNER_TEMP/kotlin-jvm-target.gradle" <<'EOF'
+          allprojects {
+            afterEvaluate {
+              tasks.matching {
+                it.name.startsWith("compile") && it.name.endsWith("Kotlin")
+              }.configureEach {
+                kotlinOptions.jvmTarget = "1.8"
+              }
+            }
+          }
+          EOF
+
       - name: Build debug APK
         working-directory: source/blue-big-fish-v11
-        run: gradle --no-daemon assembleDebug
+        run: gradle --no-daemon -I "$RUNNER_TEMP/kotlin-jvm-target.gradle" assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
